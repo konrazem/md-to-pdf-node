@@ -26,6 +26,11 @@ npm install
 node main.js <input.md> [output.pdf] [options]
 ```
 
+Markdown sources and the generated PDFs live in `src/` (git-ignored). The input
+is looked up as given first, then inside `src/`, so both the `src/` prefix and
+the `.md` extension can be omitted. The PDF is written next to the input unless
+`output.pdf` includes a directory.
+
 Options:
 
 | Option | Effect |
@@ -35,10 +40,12 @@ Options:
 | `--landscape` | Landscape orientation |
 | `--format=<size>` | Paper size: `A4` (default), `A3`, `Letter`, `Legal`, ... |
 
-Example:
+Examples:
 
 ```sh
-node main.js EBU_Atomic_Generator_Force_Interaction_Mathematical_Guide.md
+node main.js oscylations                       # -> src/oscylations.pdf
+node main.js src/oscylations.md draft.pdf      # -> src/draft.pdf
+node main.js oscylations.md out/final.pdf      # -> ./out/final.pdf
 ```
 
 A Mermaid diagram that fails to parse does not abort the run: its source is

@@ -20,6 +20,11 @@
  * Usage:
  *   node main.js <input.md> [output.pdf] [options]
  *
+ *   Markdown sources and generated PDFs live in ./src. An input that is not
+ *   found as given is looked up in ./src (the .md extension may be omitted),
+ *   and the PDF is written next to the input unless output.pdf includes a
+ *   directory.
+ *
  * Options:
  *   --fix-encoding   Repair a double-encoded UTF-8 file ("MÃ¶bius" -> "Möbius")
  *   --keep-html      Keep the intermediate .render.html next to the PDF
@@ -31,12 +36,19 @@ const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
+// Where the Markdown sources and generated PDFs live.
+const SRC_DIR = path.join(__dirname, 'src');
+
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
 
 function usage() {
   console.log(`Usage: node main.js <input.md> [output.pdf] [options]
+
+Input files are looked up as given, then inside ./src (".md" may be omitted).
+The PDF is written next to the input file (i.e. into ./src) unless output.pdf
+includes a directory.
 
 Options:
   --fix-encoding   Repair a double-encoded UTF-8 file ("MÃ¶bius" -> "Möbius")
@@ -101,6 +113,28 @@ function fixEncoding(text) {
     else for (const b of Buffer.from(ch, 'utf8')) bytes.push(b);
   }
   return Buffer.from(bytes).toString('utf8');
+}
+
+// Locate the input file: as given, then inside ./src (with or without ".md").
+function resolveInput(arg) {
+  const candidates = [
+    path.resolve(arg),
+    path.join(SRC_DIR, arg),
+    path.join(SRC_DIR, `${arg}.md`),
+  ];
+  return candidates.find((c) => fs.existsSync(c) && fs.statSync(c).isFile()) || null;
+}
+
+// Output path: default is the input name with .pdf, next to the input (so in
+// ./src). A bare filename (no directory part) is also placed next to the input;
+// anything with a directory component is used as given.
+function resolveOutput(arg, inputPath) {
+  const inputDir = path.dirname(inputPath);
+  if (!arg) {
+    return path.join(inputDir, path.basename(inputPath).replace(/\.(md|markdown)$/i, '') + '.pdf');
+  }
+  if (path.basename(arg) === arg) return path.join(inputDir, arg);
+  return path.resolve(arg);
 }
 
 // Resolve a file inside node_modules, tolerating "exports"-restricted packages.
@@ -430,15 +464,15 @@ async function main() {
   if (args.help) { usage(); return; }
   if (args._.length === 0) { usage(); process.exitCode = 1; return; }
 
-  const inputPath = path.resolve(args._[0]);
-  if (!fs.existsSync(inputPath)) {
-    console.error(`Input file not found: ${inputPath}`);
+  const inputPath = resolveInput(args._[0]);
+  if (!inputPath) {
+    console.error(
+      `Input file not found: ${args._[0]} (looked in the current directory and ${SRC_DIR})`
+    );
     process.exitCode = 1;
     return;
   }
-  const outputPath = path.resolve(
-    args._[1] || inputPath.replace(/\.(md|markdown)$/i, '') + '.pdf'
-  );
+  const outputPath = resolveOutput(args._[1], inputPath);
 
   let text = fs.readFileSync(inputPath, 'utf8');
   if (args.fixEncoding) {
