@@ -1,0 +1,28 @@
+{
+  "name": "md-to-pdf-node",
+  "version": "1.0.0",
+  "description": "Convert Markdown with LaTeX math and Mermaid diagrams to PDF",
+  "main": "main.js",
+  "bin": {
+    "md-to-pdf-node": "main.js"
+  },
+  "scripts": {
+    "convert": "node main.js"
+  },
+  "keywords": [
+    "markdown",
+    "pdf",
+    "latex",
+    "mathjax",
+    "mermaid",
+    "puppeteer"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "markdown-it": "^14.1.0",
+    "mathjax": "^3.2.2",
+    "mermaid": "^11.4.1",
+    "puppeteer": "^24.0.0"
+  }
+}
